@@ -24,12 +24,16 @@ export async function createServerSupabase() {
     }
   )
 
-  // Set clerk_id for RLS policies
+// Set clerk_id for RLS policies
   if (userId) {
-    await client.rpc('set_config', {
-      setting_name: 'app.clerk_id',
-      new_value: userId,
-    }).catch(() => {})
+    try {
+      await client.rpc('set_config', {
+        setting_name: 'app.clerk_id',
+        new_value: userId,
+      })
+    } catch (error) {
+      // Silently catch the error, exactly as intended
+    }
   }
 
   return client
