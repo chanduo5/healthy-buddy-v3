@@ -1,0 +1,18 @@
+{
+  "name": "Healthy Buddy",
+  "short_name": "Healthy Buddy",
+  "description": "Gamified habit tracker with AI coaching",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0a0f0a",
+  "background_color": "#080d08",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["health", "productivity", "lifestyle"],
+  "screenshots": [
+    { "src": "/screenshot-1.png", "sizes": "1280x800", "type": "image/png" }
+  ]
+}
