@@ -35,7 +35,7 @@ export default function HabitCard({ habit, dragHandleProps }: Props) {
         toast('Completion undone', { icon: '↩️' })
       }
     } else {
-      // Complete habit
+      // Complete habit with satisfying pulse animation
       const rect = cardRef.current?.getBoundingClientRect()
       const res = await fetch(`/api/habits/${habit.id}/complete`, { method: 'POST' })
       const json = await res.json()
@@ -43,6 +43,13 @@ export default function HabitCard({ habit, dragHandleProps }: Props) {
         const { xpEarned, newStreak, leveledUp } = json.data
         markHabitComplete(habit.id, xpEarned)
         updateUserXp(xpEarned)
+
+        // Trigger satisfying pulse animation
+        if (cardRef.current) {
+          cardRef.current.style.animation = 'none'
+          cardRef.current.offsetHeight // Trigger reflow
+          cardRef.current.style.animation = 'habitCompletePulse 0.6s ease-out'
+        }
 
         // Spawn XP pop
         if (rect) addXpPop(xpEarned, rect.left + rect.width / 2, rect.top)
@@ -146,6 +153,24 @@ export default function HabitCard({ habit, dragHandleProps }: Props) {
         >
           {diffMeta.label} · {diffMeta.multiplier}
         </span>
+
+        {/* Mental Strain badge */}
+        {habit.mental_strain && (
+          <span
+            className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+            style={{
+              background: habit.mental_strain === 'low' ? '#4ade8018' :
+                         habit.mental_strain === 'medium' ? '#fb923c18' : '#f43f5e18',
+              color: habit.mental_strain === 'low' ? '#4ade80' :
+                     habit.mental_strain === 'medium' ? '#fb923c' : '#f43f5e',
+              border: `1px solid ${habit.mental_strain === 'low' ? '#4ade8040' :
+                                   habit.mental_strain === 'medium' ? '#fb923c40' : '#f43f5e40'}`,
+            }}
+          >
+            {habit.mental_strain === 'low' ? '🧘 Low' :
+             habit.mental_strain === 'medium' ? '🤔 Medium' : '🧠 High'} Strain
+          </span>
+        )}
 
         {/* Streak badge */}
         {habit.current_streak > 0 && (

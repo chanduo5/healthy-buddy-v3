@@ -13,9 +13,9 @@ const DragDropContext = dynamic(() => import('@hello-pangea/dnd').then(m => m.Dr
 const Droppable      = dynamic(() => import('@hello-pangea/dnd').then(m => m.Droppable),      { ssr: false })
 const Draggable      = dynamic(() => import('@hello-pangea/dnd').then(m => m.Draggable),      { ssr: false })
 
-interface Props { habits: Habit[]; onAddHabit: () => void }
+interface Props { habits: Habit[]; onAddHabit: () => void; onVoiceDump?: () => void; onShield?: () => void }
 
-export default function HabitGrid({ habits, onAddHabit }: Props) {
+export default function HabitGrid({ habits, onAddHabit, onVoiceDump, onShield }: Props) {
   const { reorderHabits } = useHabitStore()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -79,9 +79,29 @@ export default function HabitGrid({ habits, onAddHabit }: Props) {
             {allDone && <span className="text-green-400 ml-2">— Perfect day! 🏆</span>}
           </p>
         </div>
-        <button onClick={onAddHabit} className="btn-ghost gap-2 text-sm py-2 px-4">
-          <Plus size={16} /> Add habit
-        </button>
+        <div className="flex items-center gap-2">
+          {onVoiceDump && (
+            <button
+              onClick={onVoiceDump}
+              className="btn-ghost gap-2 text-sm py-2 px-3"
+              title="Voice Journal"
+            >
+              <span className="text-lg">🎙️</span>
+            </button>
+          )}
+          {onShield && (
+            <button
+              onClick={onShield}
+              className="btn-ghost gap-2 text-sm py-2 px-3"
+              title="Mental Health Shield"
+            >
+              <span className="text-lg">🛡️</span>
+            </button>
+          )}
+          <button onClick={onAddHabit} className="btn-ghost gap-2 text-sm py-2 px-4">
+            <Plus size={16} /> Add habit
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>

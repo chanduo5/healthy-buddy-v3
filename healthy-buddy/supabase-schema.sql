@@ -148,6 +148,43 @@ CREATE TABLE public.challenges (
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- ─── MOOD CHECK-INS ──────────────────────────────────
+CREATE TABLE public.mood_checkins (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id       UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  energy_level  INTEGER NOT NULL CHECK (energy_level BETWEEN 1 AND 10),
+  mood_level    INTEGER NOT NULL CHECK (mood_level BETWEEN 1 AND 10),
+  date          DATE NOT NULL DEFAULT CURRENT_DATE,
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, date)
+);
+
+-- ─── VOICE DUMPS ─────────────────────────────────────
+CREATE TABLE public.voice_dumps (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id       UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  transcript    TEXT NOT NULL,
+  sentiment_score DECIMAL(3,2) CHECK (sentiment_score BETWEEN -1 AND 1),
+  stress_score  INTEGER CHECK (stress_score BETWEEN 0 AND 100),
+  ai_insights   TEXT,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ─── MENTAL HEALTH SHIELDS ───────────────────────────
+CREATE TABLE public.mental_health_shields (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id       UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  activated_at  TIMESTAMPTZ DEFAULT NOW(),
+  expires_at    TIMESTAMPTZ NOT NULL,
+  reason        TEXT,
+  xp_cost       INTEGER NOT NULL DEFAULT 100,
+  UNIQUE(user_id, activated_at) -- Prevent multiple active shields
+);
+
+-- ─── MIGRATIONS ──────────────────────────────────────
+-- Add mental_strain to habits table
+ALTER TABLE public.habits ADD COLUMN IF NOT EXISTS mental_strain TEXT DEFAULT 'medium' CHECK (mental_strain IN ('low','medium','high'));
+
 CREATE TABLE public.challenge_participants (
   id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   challenge_id  UUID NOT NULL REFERENCES public.challenges(id) ON DELETE CASCADE,

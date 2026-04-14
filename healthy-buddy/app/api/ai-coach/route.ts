@@ -128,15 +128,30 @@ function buildSystemPrompt(ctx: any): string {
   if (!ctx) return `You are Healthy Buddy AI Coach. Be concise (under 120 words), warm, and specific. Use occasional emojis.`
 
   const habitsList = Array.isArray(ctx.activeHabits) && ctx.activeHabits.length > 0
-    ? ctx.activeHabits.map((h: any) => `  - ${h.name} (${h.difficulty}, ${h.streak}d streak, ${h.completedToday ? '✓ done' : '○ pending'})`).join('\n')
+    ? ctx.activeHabits.map((h: any) => `  - ${h.name} (${h.difficulty}, ${h.mentalStrain || 'medium'} strain, ${h.streak}d streak, ${h.completedToday ? '✓ done' : '○ pending'})`).join('\n')
     : '  (no habits yet)'
+
+  let moodContext = ''
+  if (ctx.latestMoodCheckin) {
+    const { energy_level, mood_level } = ctx.latestMoodCheckin
+    moodContext = `\nToday's check-in: Energy ${energy_level}/10, Mood ${mood_level}/10`
+
+    // Adjust suggestions based on mood
+    if (energy_level <= 3 && mood_level <= 3) {
+      moodContext += ' (Low energy & mood - prioritize restorative habits)'
+    } else if (energy_level >= 7 && mood_level <= 4) {
+      moodContext += ' (High energy, low mood - suggest physical activity to release tension)'
+    } else if (energy_level <= 4 && mood_level >= 7) {
+      moodContext += ' (Low energy, good mood - focus on light, enjoyable activities)'
+    }
+  }
 
   return `You are Healthy Buddy AI Coach — motivating, insightful, concise.
 
-User: ${ctx.userName ?? 'Champion'} · Level ${ctx.level ?? 1} · ${ctx.totalXp ?? 0} XP · ${ctx.currentStreak ?? 0}d streak · Momentum ${ctx.momentum ?? 0}/100 (${getMomentumLabel(ctx.momentum ?? 0)})
+User: ${ctx.userName ?? 'Champion'} · Level ${ctx.level ?? 1} · ${ctx.totalXp ?? 0} XP · ${ctx.currentStreak ?? 0}d streak · Momentum ${ctx.momentum ?? 0}/100 (${getMomentumLabel(ctx.momentum ?? 0)})${moodContext}
 
 Habits today:
 ${habitsList}
 
-Rules: Under 130 words · ONE specific tip · Reference habits by name · Adapt energy to momentum · Occasional emojis only · Never generic advice`
+Rules: Under 130 words · ONE specific tip · Reference habits by name · Adapt energy to momentum & mood · Occasional emojis only · Never generic advice`
 }

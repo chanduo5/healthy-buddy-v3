@@ -12,6 +12,7 @@ const createHabitSchema = z.object({
   icon:           z.string().default('⭐'),
   color:          z.string().default('#4ade80'),
   difficulty:     z.enum(['easy', 'medium', 'hard']).default('medium'),
+  mental_strain:  z.enum(['low', 'medium', 'high']).default('medium'),
   frequency:      z.enum(['daily', 'weekly', 'custom']).default('daily'),
   frequency_days: z.array(z.number()).default([1,2,3,4,5,6,7]),
   target_count:   z.number().min(1).default(1),

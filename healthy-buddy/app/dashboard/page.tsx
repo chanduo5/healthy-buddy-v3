@@ -14,6 +14,10 @@ import AiCoachPanel from '@/components/ui/AiCoachPanel'
 import XpFloatingPop from '@/components/gamification/XpFloatingPop'
 import DashboardSidebar from '@/components/layout/DashboardSidebar'
 import ThemeSettingsPanel from '@/components/ui/ThemeSettingsPanel'
+import EnergyMoodCheckin from '@/components/ui/EnergyMoodCheckin'
+import VoiceDumpModal from '@/components/ui/VoiceDumpModal'
+import MentalHealthShield from '@/components/ui/MentalHealthShield'
+import { HabitGridSkeleton } from '@/components/ui/SkeletonLoader'
 import { Plus, Zap, Flame, Target, TrendingUp, Palette } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -24,6 +28,9 @@ export default function DashboardPage() {
   const { user, habits, stats, isLoading, xpPopQueue, setHabits, setUser, setLoading } = useHabitStore()
   const [addHabitOpen, setAddHabitOpen]   = useState(false)
   const [themeOpen, setThemeOpen]         = useState(false)
+  const [energyMoodOpen, setEnergyMoodOpen] = useState(false)
+  const [voiceDumpOpen, setVoiceDumpOpen] = useState(false)
+  const [shieldOpen, setShieldOpen]       = useState(false)
   const [activePanel, setActivePanel]     = useState<PanelId>('habits')
 
   const fetchData = useCallback(async () => {
@@ -46,6 +53,17 @@ export default function DashboardPage() {
   }, [clerkUser?.id])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  // Show energy/mood checkin on first login of the day
+  useEffect(() => {
+    if (!isLoading && user && habits.length >= 0) {
+      const today = new Date().toDateString()
+      const lastCheckin = localStorage.getItem('lastMoodCheckin')
+      if (lastCheckin !== today) {
+        setEnergyMoodOpen(true)
+      }
+    }
+  }, [isLoading, user, habits])
 
   // Show upgrade toast if returning from Stripe
   useEffect(() => {
@@ -125,7 +143,27 @@ export default function DashboardPage() {
           <motion.div key={activePanel}
             initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }}
             exit={{ opacity:0, y:-8 }} transition={{ duration: 0.2 }}>
-            {activePanel === 'habits'   && <HabitGrid habits={habits} onAddHabit={() => setAddHabitOpen(true)} />}
+            {activePanel === 'habits' && (
+              isLoading ? (
+                <div>
+                  <div className="flex items-center justify-between mb-5">
+                    <div>
+                      <div className="h-6 bg-white/10 rounded w-32 animate-pulse mb-2"></div>
+                      <div className="h-4 bg-white/5 rounded w-24 animate-pulse"></div>
+                    </div>
+                    <div className="h-8 bg-white/10 rounded w-20 animate-pulse"></div>
+                  </div>
+                  <HabitGridSkeleton />
+                </div>
+              ) : (
+                <HabitGrid
+                  habits={habits}
+                  onAddHabit={() => setAddHabitOpen(true)}
+                  onVoiceDump={() => setVoiceDumpOpen(true)}
+                  onShield={() => setShieldOpen(true)}
+                />
+              )
+            )}
             {activePanel === 'heatmap'  && <HeatmapCard userId={user?.id ?? ''} />}
             {activePanel === 'ai'       && <AiCoachPanel user={user} habits={habits} momentum={momentum} />}
             {activePanel === 'pomodoro' && <PomodoroTimer habits={habits} />}
@@ -140,6 +178,24 @@ export default function DashboardPage() {
 
       <AddHabitModal open={addHabitOpen} onClose={() => setAddHabitOpen(false)} />
       <ThemeSettingsPanel open={themeOpen} onClose={() => setThemeOpen(false)} />
+      <EnergyMoodCheckin
+        open={energyMoodOpen}
+        onClose={() => setEnergyMoodOpen(false)}
+        onComplete={(energy, mood) => {
+          localStorage.setItem('lastMoodCheckin', new Date().toDateString())
+          // Could trigger AI suggestions based on energy/mood here
+        }}
+      />
+      <VoiceDumpModal open={voiceDumpOpen} onClose={() => setVoiceDumpOpen(false)} />
+      <MentalHealthShield
+        open={shieldOpen}
+        onClose={() => setShieldOpen(false)}
+        userXp={user?.xp || 0}
+        onShieldActivated={() => {
+          // Refresh user data to update XP
+          fetchData()
+        }}
+      />
     </div>
   )
 }

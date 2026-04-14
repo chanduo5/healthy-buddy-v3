@@ -217,3 +217,9 @@ body {
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes habitCompletePulse {
+  0%   { transform: scale(1); box-shadow: 0 0 0 0 var(--accent-glow); }
+  25%  { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(74,222,128,0); }
+  50%  { transform: scale(1.02); box-shadow: 0 0 0 16px rgba(74,222,128,0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+}

@@ -1,13 +1,13 @@
-# 🚀 Healthy Buddy — Local Setup Guide
+# 🚀 Healthy Buddy v3.0 — Complete Setup Guide
 
-Follow these steps **in order** to get the app running on localhost.
+Follow these steps **in order** to get the enhanced Healthy Buddy app running with all new features including AI-powered voice journaling, mood tracking, mental health shields, and cognitive load balancing.
 
 ---
 
 ## ✅ Prerequisites
 
 - Node.js 18+ installed → check with `node -v`
-- A free account on: [Clerk](https://clerk.com), [Supabase](https://supabase.com), [Anthropic](https://console.anthropic.com)
+- A free account on: [Clerk](https://clerk.com), [Supabase](https://supabase.com), [Anthropic](https://console.anthropic.com), [OpenAI](https://platform.openai.com)
 
 ---
 
@@ -63,7 +63,21 @@ In Clerk → **Redirects** settings, set:
 3. Copy the key (starts with `sk-ant-...`)
 4. Set `ANTHROPIC_API_KEY=sk-ant-...`
 
-> **Note:** The AI Coach only works with a valid API key. Without it, other features still work fine.
+### 🎙️ OpenAI (Voice Journaling & Analysis)
+
+1. Go to [platform.openai.com](https://platform.openai.com) → **API Keys**
+2. Click **Create new secret key**, name it "Healthy Buddy Voice"
+3. Copy the key (starts with `sk-...`)
+4. Set `OPENAI_API_KEY=sk-...`
+
+### 🧠 Google Gemini (Voice Analysis)
+
+1. Go to [makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)
+2. Create a new API key for "Healthy Buddy"
+3. Copy the key
+4. Set `GEMINI_API_KEY=your-gemini-api-key`
+
+> **Note:** Voice journaling requires both OpenAI (Whisper) and Gemini API keys. Mood tracking and mental health shields work without these.
 
 ### 💳 Stripe (Optional — for Pro plan)
 
@@ -85,9 +99,61 @@ If you want Stripe:
 5. Paste the entire contents and click **Run**
 6. You should see "Success. No rows returned"
 
+> **Important:** The updated schema includes new tables for mood check-ins, voice dumps, mental health shields, and the mental_strain column for habits.
+
 ---
 
-## Step 4 — Start the app
+## Step 4 — Database Migrations (New Features)
+
+After running the main schema, run these additional migrations:
+
+### Add Mental Strain to Habits
+```sql
+ALTER TABLE public.habits ADD COLUMN IF NOT EXISTS mental_strain TEXT DEFAULT 'medium' CHECK (mental_strain IN ('low','medium','high'));
+```
+
+### Create Mood Check-ins Table
+```sql
+CREATE TABLE public.mood_checkins (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id       UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  energy_level  INTEGER NOT NULL CHECK (energy_level BETWEEN 1 AND 10),
+  mood_level    INTEGER NOT NULL CHECK (mood_level BETWEEN 1 AND 10),
+  date          DATE NOT NULL DEFAULT CURRENT_DATE,
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, date)
+);
+```
+
+### Create Voice Dumps Table
+```sql
+CREATE TABLE public.voice_dumps (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id       UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  transcript    TEXT NOT NULL,
+  sentiment_score DECIMAL(3,2) CHECK (sentiment_score BETWEEN -1 AND 1),
+  stress_score  INTEGER CHECK (stress_score BETWEEN 0 AND 100),
+  ai_insights   TEXT,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Create Mental Health Shields Table
+```sql
+CREATE TABLE public.mental_health_shields (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id       UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  activated_at  TIMESTAMPTZ DEFAULT NOW(),
+  expires_at    TIMESTAMPTZ NOT NULL,
+  reason        TEXT,
+  xp_cost       INTEGER NOT NULL DEFAULT 100,
+  UNIQUE(user_id, activated_at)
+);
+```
+
+---
+
+## Step 5 — Start the app
 
 ```bash
 npm run dev
@@ -98,6 +164,78 @@ Open your browser at **http://localhost:3000**
 You should see the landing page. Click **Get Started** to create an account.
 
 ---
+
+## 🎯 New Features Setup Verification
+
+After setup, test these new features:
+
+### ✅ Energy & Mood Check-in
+- Log in to the dashboard
+- A mood check-in modal should appear automatically
+- Rate your energy (1-10) and mood (1-10)
+
+### ✅ Voice Journaling
+- On the dashboard, click the microphone button (🎙️)
+- Allow microphone access
+- Record up to 60 seconds of voice
+- AI will transcribe and analyze your mood
+
+### ✅ Mental Health Shield
+- Click the shield button (🛡️) on the dashboard
+- Spend 100 XP to protect your streaks for 24 hours
+
+### ✅ Cognitive Load Balancing
+- Create a new habit
+- Select mental strain level (Low/Medium/High)
+- See strain badges on habit cards
+
+### ✅ Enhanced AI Coach
+- The AI now considers your mood and mental strain
+- Get personalized suggestions based on your energy levels
+
+---
+
+## 🔧 Troubleshooting
+
+### Voice Recording Not Working
+- Ensure `OPENAI_API_KEY` and `GEMINI_API_KEY` are set
+- Check browser microphone permissions
+- Try in a secure context (HTTPS or localhost)
+
+### Mood Check-in Not Appearing
+- Clear localStorage: `localStorage.clear()` in browser console
+- Check that `mood_checkins` table exists in Supabase
+
+### Mental Health Shield Errors
+- Ensure you have at least 100 XP
+- Check `mental_health_shields` table permissions
+
+### Database Errors
+- Verify all tables were created successfully
+- Check Supabase logs for detailed error messages
+
+---
+
+## 📱 Production Deployment
+
+When ready for production:
+
+1. **Environment Variables**: Set all production API keys
+2. **Database**: Run the schema on your production Supabase instance
+3. **Build**: `npm run build`
+4. **Deploy**: Use Vercel, Netlify, or your preferred platform
+
+---
+
+## 🆘 Support
+
+If you encounter issues:
+1. Check the browser console for errors
+2. Verify all environment variables are set
+3. Ensure Supabase tables exist and have correct permissions
+4. Test API endpoints individually
+
+Happy habit tracking! 🌱✨
 
 ## 🐛 Troubleshooting
 

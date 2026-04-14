@@ -33,8 +33,20 @@ export default function AiCoachPanel({ user, habits, momentum }: Props) {
   // Cancel any in-flight stream when unmounting
   useEffect(() => () => { readerRef.current?.cancel().catch(() => {}) }, [])
 
-  const buildContext = useCallback(() => {
+  const buildContext = useCallback(async () => {
     const levelInfo = getLevelInfo(user?.xp ?? 0)
+
+    // Fetch latest mood checkin
+    let latestMoodCheckin = null
+    try {
+      const response = await fetch('/api/mood-checkin/latest')
+      if (response.ok) {
+        latestMoodCheckin = await response.json()
+      }
+    } catch (e) {
+      // Ignore errors, mood checkin is optional
+    }
+
     return {
       userName:       user?.display_name?.split(' ')[0] ?? 'Champion',
       level:          levelInfo.level,
@@ -43,9 +55,10 @@ export default function AiCoachPanel({ user, habits, momentum }: Props) {
       momentum,
       weekCompletion: Math.round((habits.filter(h => h.completed_today).length / Math.max(habits.length, 1)) * 100),
       activeHabits:   habits.map(h => ({
-        name: h.name, difficulty: h.difficulty,
+        name: h.name, difficulty: h.difficulty, mentalStrain: h.mental_strain,
         streak: h.current_streak, completedToday: h.completed_today ?? false,
       })),
+      latestMoodCheckin,
       recentBadges: [],
     }
   }, [user, habits, momentum])
@@ -62,10 +75,11 @@ export default function AiCoachPanel({ user, habits, momentum }: Props) {
     setStreaming(true)
 
     try {
+      const context = await buildContext()
       const res = await fetch('/api/ai-coach', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed, context: buildContext() }),
+        body: JSON.stringify({ message: trimmed, context }),
       })
 
       if (!res.ok) {

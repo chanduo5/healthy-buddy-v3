@@ -26,7 +26,19 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
 
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
     const isConsecutive = habit.last_completed === yesterday || habit.last_completed === today
-    const newStreak = isConsecutive ? habit.current_streak + 1 : 1
+
+    // Check for active mental health shield
+    const { data: activeShield } = await supabase
+      .from('mental_health_shields')
+      .select('id')
+      .eq('user_id', dbUser.id)
+      .gt('expires_at', new Date().toISOString())
+      .single()
+
+    // If there's an active shield and this would break a streak, maintain the streak
+    const shouldProtectStreak = activeShield && !isConsecutive && habit.current_streak > 0
+
+    const newStreak = shouldProtectStreak ? habit.current_streak : (isConsecutive ? habit.current_streak + 1 : 1)
 
     const xpEarned = calculateXpReward(habit.difficulty, newStreak)
     const newUserXp = (dbUser.xp ?? 0) + xpEarned

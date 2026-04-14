@@ -16,6 +16,7 @@ const schema = z.object({
   name: z.string().min(1, 'Name is required').max(60),
   description: z.string().max(200).optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
+  mental_strain: z.enum(['low', 'medium', 'high']).default('medium'),
   category: z.string().default('health'),
   target_count: z.number().min(1).default(1),
   unit: z.string().optional(),
@@ -34,6 +35,12 @@ const DIFFICULTY_INFO = {
   hard:   { label: 'Hard',   xp: 30, color: '#f43f5e', desc: 'Willpower test' },
 }
 
+const MENTAL_STRAIN_INFO = {
+  low:    { label: 'Low Strain',    color: '#4ade80', desc: 'Relaxing & restorative' },
+  medium: { label: 'Medium Strain', color: '#fb923c', desc: 'Balanced mental effort' },
+  high:   { label: 'High Strain',   color: '#f43f5e', desc: 'Intensive focus required' },
+}
+
 export default function AddHabitModal({ open, onClose }: Props) {
   const [selectedIcon, setSelectedIcon] = useState('⭐')
   const [selectedColor, setSelectedColor] = useState('#4ade80')
@@ -42,10 +49,11 @@ export default function AddHabitModal({ open, onClose }: Props) {
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { difficulty: 'medium', target_count: 1 },
+    defaultValues: { difficulty: 'medium', mental_strain: 'medium', target_count: 1 },
   })
 
   const difficulty = watch('difficulty')
+  const mentalStrain = watch('mental_strain')
 
   async function onSubmit(data: FormData) {
     setIsSubmitting(true)
@@ -92,7 +100,7 @@ export default function AddHabitModal({ open, onClose }: Props) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 10 }}
             transition={{ type: 'spring', duration: 0.4 }}
-            className="fixed inset-x-4 top-1/2 -translate-y-1/2 max-w-lg mx-auto glass-card-elevated rounded-2xl p-6 z-50 max-h-[90vh] overflow-y-auto"
+            className="fixed inset-x-4 top-4 bottom-4 max-w-lg mx-auto glass-card-elevated rounded-2xl p-6 z-50 flex flex-col max-h-[calc(100vh-2rem)]"
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
@@ -102,7 +110,8 @@ export default function AddHabitModal({ open, onClose }: Props) {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto space-y-5 pr-1">
               {/* Icon picker */}
               <div>
                 <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2 block">Icon</label>
@@ -167,6 +176,27 @@ export default function AddHabitModal({ open, onClose }: Props) {
                 </div>
               </div>
 
+              {/* Mental Strain */}
+              <div>
+                <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2 block">Mental Strain</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {(Object.entries(MENTAL_STRAIN_INFO) as any[]).map(([key, info]) => (
+                    <label key={key} className="cursor-pointer">
+                      <input type="radio" {...register('mental_strain')} value={key} className="sr-only" />
+                      <div className={`rounded-xl p-3 text-center border transition-all
+                        ${mentalStrain === key
+                          ? 'border-current bg-white/10'
+                          : 'border-white/10 bg-white/5 hover:bg-white/8'}`}
+                        style={{ color: mentalStrain === key ? info.color : undefined }}
+                      >
+                        <div className="font-semibold text-sm">{info.label}</div>
+                        <div className="text-xs opacity-70">{info.desc}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               {/* Color */}
               <div>
                 <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2 block">Accent Color</label>
@@ -194,9 +224,10 @@ export default function AddHabitModal({ open, onClose }: Props) {
                   </p>
                 </div>
               </div>
+              </div>
 
               {/* Submit */}
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-4 mt-4 border-t border-white/10">
                 <button type="button" onClick={handleClose} className="btn-ghost flex-1">Cancel</button>
                 <button type="submit" disabled={isSubmitting} className="btn-primary flex-1">
                   {isSubmitting ? 'Adding...' : `Add Habit`}

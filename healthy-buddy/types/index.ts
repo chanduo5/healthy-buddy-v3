@@ -35,6 +35,7 @@ export interface Habit {
   icon: string
   color: string
   difficulty: Difficulty
+  mental_strain?: 'low' | 'medium' | 'high' // New: Cognitive load balancing
   xp_reward: number
   frequency: Frequency
   frequency_days: number[]
@@ -111,6 +112,37 @@ export interface AiCoachMessage {
   content: string
   context_data: Record<string, unknown> | null
   created_at: string
+}
+
+// New: Energy & Mood Check-in
+export interface MoodCheckin {
+  id: string
+  user_id: string
+  energy_level: number // 1-10
+  mood_level: number // 1-10
+  date: string
+  created_at: string
+}
+
+// New: Voice-to-Text Brain Dumps
+export interface VoiceDump {
+  id: string
+  user_id: string
+  transcript: string
+  sentiment_score: number // -1 to 1 (negative to positive)
+  stress_score: number // 0-100
+  ai_insights: string | null
+  created_at: string
+}
+
+// New: Mental Health Shields
+export interface MentalHealthShield {
+  id: string
+  user_id: string
+  activated_at: string
+  expires_at: string
+  reason: string | null
+  xp_cost: number
 }
 
 // ─── API Response Types ───────────────────────────────
